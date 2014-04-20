@@ -39,7 +39,7 @@
                 </dependencies>
                 <configuration>
                     <properties>
-                        <qBaseDir>${project.basedir}/dependencies/q</qBaseDir>
+                        <qBaseDir>${project.build.directory}/dependency/q</qBaseDir>
                     </properties>
                     <trimStackTrace>true</trimStackTrace>
                     <includes>

@@ -1,5 +1,6 @@
 package qunit;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.surefire.providerapi.AbstractProvider;
 import org.apache.maven.surefire.providerapi.ProviderParameters;
 import org.apache.maven.surefire.report.*;
@@ -8,6 +9,7 @@ import org.apache.maven.surefire.testset.TestSetFailedException;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -24,14 +26,22 @@ public class QunitSurefireProvider extends AbstractProvider {
     private final ConsoleLogger consoleLogger;
 
     private final File testSourceDirectory;
+    private final File testClassesDirectory;
 
     private final File qBinary;
+    private final File testRunnerFile;
 
-    public QunitSurefireProvider(ProviderParameters providerParameters) {
+    public QunitSurefireProvider(ProviderParameters providerParameters) throws IOException {
         this.providerParameters = providerParameters;
         this.consoleLogger = providerParameters.getConsoleLogger();
         this.testSourceDirectory = providerParameters.getTestRequest().getTestSourceDirectory();
+        this.testClassesDirectory = new File(providerParameters.getProviderProperties().getProperty("testClassesDirectory"));
+        this.testRunnerFile = new File(this.testClassesDirectory.getAbsolutePath() + "/" + "testRunner.q");
         qBinary = findQBinary();
+
+        // setup test runner
+        File testRunnerSrcFile = new File(providerParameters.getTestClassLoader().getResource("q/testRunner.q").getFile());
+        FileUtils.copyFile(testRunnerSrcFile, testRunnerFile);
     }
 
     @Override
@@ -71,6 +81,9 @@ public class QunitSurefireProvider extends AbstractProvider {
     }
 
     private void runTestSuite(File testSuite, RunListener runListener) {
+
+
+
         // run it with a qunit boot script and an argument for the test suite to run
 
         // get tests
@@ -95,12 +108,45 @@ public class QunitSurefireProvider extends AbstractProvider {
             qBaseDir = providerParameters.getProviderProperties().getProperty("qBaseDir");
         } else {
             qBaseDir = System.getenv("QHOME");
+            consoleLogger.info("[WARN] Using QHOME - this means the test has an external dependency");
             if (null == qBaseDir) {
                 throw new IllegalStateException("Could not find an instance of q to execute.  Is qBaseDir set in plugin configuration?");
             }
         }
-        consoleLogger.info("Using q from " + qBaseDir + EOL);
-        return new File(qBaseDir);
+
+        // basedir found - now look for best version to use
+        String qPlatform = getQBinaryPlatform();
+        String qBinaryArch = getQBinaryArch(qBaseDir, qPlatform);
+        File qBinary = new File(qBaseDir + "/" + qPlatform + qBinaryArch + "/q");
+        // test for existence and can execute
+        if (!qBinary.canExecute()) {
+            throw new IllegalArgumentException("Could not find executable Q, tried: " + qBinary.getAbsolutePath());
+        }
+        consoleLogger.info("Using q @ " + qBinary.getAbsolutePath() + EOL);
+        return qBinary;
+    }
+
+    private static String getQBinaryPlatform() {
+        String osName = System.getProperty("os.name");
+        if (osName.toLowerCase().contains("linux")) {
+            return "l";
+        } else if (osName.toLowerCase().contains("windows")) {
+            return "w";
+        } else if (osName.toLowerCase().contains("mac")) {
+            return "m";
+        } else {
+            throw new IllegalArgumentException("Unsupported OS: " + osName);
+        }
+    }
+
+    private String getQBinaryArch(String qBaseDir, String platformKey) {
+        String osArch = System.getProperty("os.arch");
+        File defaultBinary = new File(qBaseDir + "/" + platformKey + "64" + "/q");
+        defaultBinary.setExecutable(true);
+        if (osArch.toLowerCase().contains("64") && defaultBinary.canExecute()) {
+            return "64";
+        }
+        return "32";
     }
 
     public RunResult sampleInvoke(Object forkTestSet) throws TestSetFailedException, ReporterException, InvocationTargetException {

@@ -6,7 +6,7 @@
 
 / load a file/directory
 .qunit.load:{[path]
-    
+
     }
 
 .qunit.initialise:{
