@@ -20,7 +20,6 @@
             <version>1.0-SNAPSHOT</version>
             <type>zip</type>
             <classifier>kdb</classifier>
-            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -72,13 +71,12 @@
                 <version>2.8</version>
                 <executions>
                     <execution>
-                        <id>unpack-dependencies</id>
-                        <phase>package</phase>
+                        <id>provided-lib-copy</id>
+                        <phase>generate-resources</phase>
                         <goals>
                             <goal>unpack-dependencies</goal>
                         </goals>
                         <configuration>
-                            <outputDirectory>${project.build.directory}/dependencies</outputDirectory>
                             <overWriteReleases>false</overWriteReleases>
                             <overWriteSnapshots>true</overWriteSnapshots>
                         </configuration>
