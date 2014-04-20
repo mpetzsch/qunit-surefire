@@ -68,11 +68,23 @@ public class QunitSurefireProvider extends AbstractProvider {
     }
 
     private void runTestSuite(File testSuite, RunListener runListener) {
+        // find the Q version which this project depends on - should be in target dir
+
+        // run it with a qunit boot script and an argument for the test suite to run
+
+        // get tests
+
+        // execute each test (setup / teardown?)
+
+        // any need for multiple process on ports ability here?
+
+        // stop process
+
         runListener.testStarting(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_firstTest"));
         runListener.testSucceeded(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_firstTest"));
 
-        runListener.testStarting(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_secondTest"));
-        runListener.testFailed(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_secondTest", new QunitStackTraceWriter(testSuite, "test_secondTest", "does not match"), 0));
+        //runListener.testStarting(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_secondTest"));
+        //runListener.testFailed(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_secondTest", new QunitStackTraceWriter(testSuite, "test_secondTest", "does not match"), 0));
     }
 
     public RunResult sampleInvoke(Object forkTestSet) throws TestSetFailedException, ReporterException, InvocationTargetException {

@@ -16,6 +16,7 @@
     <modules>
         <module>qunit-surefire-provider</module>
         <module>qunit-surefire-provider-test</module>
+        <module>lib-kdb</module>
     </modules>
 
 </project>
