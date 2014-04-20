@@ -28,6 +28,7 @@
                     </dependency>
                 </dependencies>
                 <configuration>
+                    <trimStackTrace>true</trimStackTrace>
                     <includes>
                         <include>**/*</include>
                     </includes>
