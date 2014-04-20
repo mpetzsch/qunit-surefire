@@ -1,5 +1,6 @@
 package qunit;
 
+import kx.c;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.surefire.providerapi.AbstractProvider;
 import org.apache.maven.surefire.providerapi.ProviderParameters;
@@ -7,10 +8,9 @@ import org.apache.maven.surefire.report.*;
 import org.apache.maven.surefire.suite.RunResult;
 import org.apache.maven.surefire.testset.TestSetFailedException;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.io.IOException;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.net.ServerSocket;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -81,7 +81,36 @@ public class QunitSurefireProvider extends AbstractProvider {
     }
 
     private void runTestSuite(File testSuite, RunListener runListener) {
+        int port = 0;
+        try {
+            // find a free port
+            ServerSocket socket = new ServerSocket(0);
+            port = socket.getLocalPort();
+            socket.close();
+            // start q
+            ProcessBuilder processBuilder = new ProcessBuilder(qBinary.getAbsolutePath(),testRunnerFile.getAbsolutePath(),"-p",String.valueOf(port));
+            //System.out.println(processBuilder.command().toString());
+            processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
+            processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 
+            consoleLogger.info("starting q on port " + port + EOL);
+            final Process qProcess = processBuilder.start();
+
+            // process started - now do stuff
+            kx.c testInstance = new c("localhost", port);
+            Object[] tests = (Object[])testInstance.k(".qunit.initialise[]");
+            if (tests.length == 0) {
+                consoleLogger.info("No tests found for " + testSuite.getName() + EOL);
+            }
+            testInstance.ks("exit 0");
+            testInstance.close();
+            qProcess.destroy();
+            consoleLogger.info("destroyed q on port " + port + EOL);
+        } catch (IOException e) {
+            throw new RuntimeException("Exception from q process: " + port, e);
+        } catch (c.KException e) {
+            throw new RuntimeException("Exception from q process: " + port, e);
+        }
 
 
         // run it with a qunit boot script and an argument for the test suite to run
