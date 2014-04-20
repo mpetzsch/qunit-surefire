@@ -19,16 +19,19 @@ import java.util.List;
  */
 public class QunitSurefireProvider extends AbstractProvider {
 
-
+    private final String EOL = System.getProperty("line.separator");
     private final ProviderParameters providerParameters;
     private final ConsoleLogger consoleLogger;
 
     private final File testSourceDirectory;
 
+    private final File qBinary;
+
     public QunitSurefireProvider(ProviderParameters providerParameters) {
         this.providerParameters = providerParameters;
         this.consoleLogger = providerParameters.getConsoleLogger();
         this.testSourceDirectory = providerParameters.getTestRequest().getTestSourceDirectory();
+        qBinary = findQBinary();
     }
 
     @Override
@@ -68,8 +71,6 @@ public class QunitSurefireProvider extends AbstractProvider {
     }
 
     private void runTestSuite(File testSuite, RunListener runListener) {
-        // find the Q version which this project depends on - should be in target dir
-
         // run it with a qunit boot script and an argument for the test suite to run
 
         // get tests
@@ -85,6 +86,21 @@ public class QunitSurefireProvider extends AbstractProvider {
 
         //runListener.testStarting(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_secondTest"));
         //runListener.testFailed(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_secondTest", new QunitStackTraceWriter(testSuite, "test_secondTest", "does not match"), 0));
+    }
+
+    private File findQBinary(){
+        // find the Q version which this project depends on - should be in target dir
+        String qBaseDir = null;
+        if (providerParameters.getProviderProperties().containsKey("qBaseDir")) {
+            qBaseDir = providerParameters.getProviderProperties().getProperty("qBaseDir");
+        } else {
+            qBaseDir = System.getenv("QHOME");
+            if (null == qBaseDir) {
+                throw new IllegalStateException("Could not find an instance of q to execute.  Is qBaseDir set in plugin configuration?");
+            }
+        }
+        consoleLogger.info("Using q from " + qBaseDir + EOL);
+        return new File(qBaseDir);
     }
 
     public RunResult sampleInvoke(Object forkTestSet) throws TestSetFailedException, ReporterException, InvocationTargetException {
