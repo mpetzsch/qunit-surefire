@@ -24,5 +24,5 @@
     }
 
 / set suicide timer
-system "t 1000";
+system "t 5000";
 show "testRunner available @ ",string[.z.h],":",string system "p";

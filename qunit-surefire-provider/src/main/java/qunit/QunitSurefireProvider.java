@@ -82,6 +82,8 @@ public class QunitSurefireProvider extends AbstractProvider {
 
     private void runTestSuite(File testSuite, RunListener runListener) {
         int port = 0;
+        Process qProcess = null;
+        kx.c testInstance = null;
         try {
             // find a free port
             ServerSocket socket = new ServerSocket(0);
@@ -93,23 +95,41 @@ public class QunitSurefireProvider extends AbstractProvider {
             processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
             processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 
-            consoleLogger.info("starting q on port " + port + EOL);
-            final Process qProcess = processBuilder.start();
+            //consoleLogger.info("starting q on port " + port + EOL);
+            qProcess = processBuilder.start();
 
             // process started - now do stuff
-            kx.c testInstance = new c("localhost", port);
+            Thread.sleep(10);
+
+            testInstance = new c("localhost", port);
             Object[] tests = (Object[])testInstance.k(".qunit.initialise[]");
             if (tests.length == 0) {
-                consoleLogger.info("No tests found for " + testSuite.getName() + EOL);
+                //consoleLogger.info("No tests found for " + testSuite.getName() + EOL);
+            } else {
+                for (Object test : tests) {
+                    runListener.testStarting(new SimpleReportEntry(testSuite.getName(), test.toString()));
+                    runListener.testSucceeded(new SimpleReportEntry(testSuite.getName(), test.toString()));
+                }
             }
-            testInstance.ks("exit 0");
-            testInstance.close();
-            qProcess.destroy();
-            consoleLogger.info("destroyed q on port " + port + EOL);
+
         } catch (IOException e) {
             throw new RuntimeException("Exception from q process: " + port, e);
         } catch (c.KException e) {
             throw new RuntimeException("Exception from q process: " + port, e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Exception from q process: " + port, e);
+        } finally {
+            if (testInstance != null) {
+                try {
+                    testInstance.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
+            if (qProcess != null) {
+                qProcess.destroy();
+            }
+            //consoleLogger.info("destroyed q on port " + port + EOL);
         }
 
 
@@ -123,8 +143,8 @@ public class QunitSurefireProvider extends AbstractProvider {
 
         // stop process
 
-        runListener.testStarting(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_firstTest"));
-        runListener.testSucceeded(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_firstTest"));
+        //runListener.testStarting(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_firstTest"));
+        //runListener.testSucceeded(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_firstTest"));
 
         //runListener.testStarting(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_secondTest"));
         //runListener.testFailed(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_secondTest", new QunitStackTraceWriter(testSuite, "test_secondTest", "does not match"), 0));
