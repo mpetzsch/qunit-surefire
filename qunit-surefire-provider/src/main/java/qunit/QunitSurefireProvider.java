@@ -72,9 +72,7 @@ public class QunitSurefireProvider extends AbstractProvider {
         runListener.testSucceeded(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_firstTest"));
 
         runListener.testStarting(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_secondTest"));
-        runListener.testFailed(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_secondTest", new EmptyStackTraceWriter(testSuite.getName(), "test_secondTest", "does not match"), 0));
-
-        runListener.testFailed(new SimpleReportEntry("test_sample1.q", "test_sample", new LegacyPojoStackTraceWriter("aa1", "bbb1", new FailedTest("bob does not match")), 0));
+        runListener.testFailed(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_secondTest", new QunitStackTraceWriter(testSuite, "test_secondTest", "does not match"), 0));
     }
 
     public RunResult sampleInvoke(Object forkTestSet) throws TestSetFailedException, ReporterException, InvocationTargetException {

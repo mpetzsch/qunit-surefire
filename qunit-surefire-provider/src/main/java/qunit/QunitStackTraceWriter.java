@@ -3,34 +3,36 @@ package qunit;
 import org.apache.maven.surefire.report.SafeThrowable;
 import org.apache.maven.surefire.report.StackTraceWriter;
 
+import java.io.File;
+
 /**
  * Created by mpetzsch on 20/04/2014.
  */
-public class EmptyStackTraceWriter implements StackTraceWriter {
+public class QunitStackTraceWriter implements StackTraceWriter {
 
-    private String testSuite;
+    private File testFile;
     private String testFunction;
     private String testMessage;
 
-    public EmptyStackTraceWriter(String testSuite, String testFunction, String testMessage) {
-        this.testSuite = testSuite;
+    public QunitStackTraceWriter(File testFile, String testFunction, String testMessage) {
+        this.testFile = testFile;
         this.testFunction = testFunction;
         this.testMessage = testMessage;
     }
 
     @Override
     public String writeTraceToString() {
-        return testSuite + "#" + testFunction + " : " + testMessage;
+        return "\tat " + testFile.getAbsolutePath() + "\n";
     }
 
     @Override
     public String writeTrimmedTraceToString() {
-        return "TestFailed : " + testMessage;
+        return "FailedTest : " + testMessage + "\n" + writeTraceToString();
     }
 
     @Override
     public String smartTrimmedStackTrace() {
-        return testSuite + "#" + testFunction + " : " + testMessage;
+        return testFile.getName() + "#" + testFunction + " FailedTest " + testMessage;
     }
 
     @Override
