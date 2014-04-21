@@ -40,6 +40,7 @@
                 <configuration>
                     <properties>
                         <qBaseDir>${project.build.directory}/dependency/q</qBaseDir>
+                        <sourceDirectory>${project.build.sourceDirectory}</sourceDirectory>
                     </properties>
                     <trimStackTrace>true</trimStackTrace>
                     <includes>
@@ -87,4 +88,16 @@
             </plugin>
         </plugins>
     </build>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>2.17</version>
+                <configuration>
+                </configuration>
+            </plugin>
+        </plugins>
+    </reporting>
 </project>

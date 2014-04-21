@@ -13,11 +13,19 @@ public class QunitStackTraceWriter implements StackTraceWriter {
     private File testFile;
     private String testFunction;
     private String testMessage;
+    private Throwable cause;
 
     public QunitStackTraceWriter(File testFile, String testFunction, String testMessage) {
         this.testFile = testFile;
         this.testFunction = testFunction;
         this.testMessage = testMessage;
+    }
+
+    public QunitStackTraceWriter(File testFile, String testFunction, Throwable e) {
+        this.testFile = testFile;
+        this.testFunction = testFunction;
+        this.cause = e;
+        this.testMessage = "'" + e.getMessage();
     }
 
     @Override
@@ -27,16 +35,16 @@ public class QunitStackTraceWriter implements StackTraceWriter {
 
     @Override
     public String writeTrimmedTraceToString() {
-        return "FailedTest : " + testMessage + "\n" + writeTraceToString();
+        return (cause != null ? cause.getClass().getName() : "FailedTest") + " : " + testMessage + "\n" + writeTraceToString();
     }
 
     @Override
     public String smartTrimmedStackTrace() {
-        return testFile.getName() + "#" + testFunction + " FailedTest " + testMessage;
+        return testFile.getName() + " # " + testFunction +"\t" + (cause != null ? cause.getClass().getName() : "FailedTest") + " " + testMessage;
     }
 
     @Override
     public SafeThrowable getThrowable() {
-        return new SafeThrowable(null);
+        return new SafeThrowable(cause);
     }
 }

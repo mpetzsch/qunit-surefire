@@ -27,6 +27,7 @@ public class QunitSurefireProvider extends AbstractProvider {
 
     private final File testSourceDirectory;
     private final File testClassesDirectory;
+    private final File sourceDirectory;
 
     private final File qBinary;
     private final File testRunnerFile;
@@ -36,6 +37,7 @@ public class QunitSurefireProvider extends AbstractProvider {
         this.consoleLogger = providerParameters.getConsoleLogger();
         this.testSourceDirectory = providerParameters.getTestRequest().getTestSourceDirectory();
         this.testClassesDirectory = new File(providerParameters.getProviderProperties().getProperty("testClassesDirectory"));
+        this.sourceDirectory = new File(providerParameters.getProviderProperties().getProperty("sourceDirectory"));
         this.testRunnerFile = new File(this.testClassesDirectory.getAbsolutePath() + "/" + "testRunner.q");
         qBinary = findQBinary();
 
@@ -47,8 +49,6 @@ public class QunitSurefireProvider extends AbstractProvider {
     @Override
     public Iterator getSuites() {
         throw new UnsupportedOperationException("getSuites not supported by Qunit");
-        /*consoleLogger.info("getSuites: TestSource:" + testSourceDirectory);
-        //return null;*/
     }
 
     @Override
@@ -90,8 +90,12 @@ public class QunitSurefireProvider extends AbstractProvider {
             port = socket.getLocalPort();
             socket.close();
             // start q
-            ProcessBuilder processBuilder = new ProcessBuilder(qBinary.getAbsolutePath(),testRunnerFile.getAbsolutePath(),"-p",String.valueOf(port));
-            //System.out.println(processBuilder.command().toString());
+            ProcessBuilder processBuilder = new ProcessBuilder(qBinary.getAbsolutePath(),testRunnerFile.getAbsolutePath(),
+                    "-p",String.valueOf(port),
+                    "-testFile",testSuite.getAbsolutePath(),
+                    "-sourceFiles",sourceDirectory.getAbsolutePath()
+                    // todo dependencies
+            );
             processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
             processBuilder.redirectOutput(ProcessBuilder.Redirect.INHERIT);
 
@@ -104,11 +108,23 @@ public class QunitSurefireProvider extends AbstractProvider {
             testInstance = new c("localhost", port);
             Object[] tests = (Object[])testInstance.k(".qunit.initialise[]");
             if (tests.length == 0) {
-                //consoleLogger.info("No tests found for " + testSuite.getName() + EOL);
+                consoleLogger.info("No tests found for " + testSuite.getName() + EOL);
             } else {
                 for (Object test : tests) {
                     runListener.testStarting(new SimpleReportEntry(testSuite.getName(), test.toString()));
-                    runListener.testSucceeded(new SimpleReportEntry(testSuite.getName(), test.toString()));
+                    long before = System.currentTimeMillis();
+                    try {
+                        Object result = testInstance.k(".qunit.runTest",test.toString());
+                        if (result instanceof char[]) {
+                            int duration = (int)(System.currentTimeMillis() - before) / 1000;
+                            runListener.testFailed(new SimpleReportEntry(testSuite.getName(), test.toString(), new QunitStackTraceWriter(testSuite, test.toString(), String.valueOf((char[])result)), duration));
+                        } else {
+                            runListener.testSucceeded(new SimpleReportEntry(testSuite.getName(), test.toString()));
+                        }
+                    } catch (c.KException e) {
+                        int duration = (int)(System.currentTimeMillis() - before) / 1000;
+                        runListener.testError(new SimpleReportEntry(testSuite.getName(), test.toString(), new QunitStackTraceWriter(testSuite, test.toString(), e), duration));
+                    }
                 }
             }
 
@@ -131,23 +147,6 @@ public class QunitSurefireProvider extends AbstractProvider {
             }
             //consoleLogger.info("destroyed q on port " + port + EOL);
         }
-
-
-        // run it with a qunit boot script and an argument for the test suite to run
-
-        // get tests
-
-        // execute each test (setup / teardown?)
-
-        // any need for multiple process on ports ability here?
-
-        // stop process
-
-        //runListener.testStarting(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_firstTest"));
-        //runListener.testSucceeded(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_firstTest"));
-
-        //runListener.testStarting(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_secondTest"));
-        //runListener.testFailed(new SimpleReportEntry(testSuite.getAbsolutePath(), "test_secondTest", new QunitStackTraceWriter(testSuite, "test_secondTest", "does not match"), 0));
     }
 
     private File findQBinary(){
@@ -196,25 +195,5 @@ public class QunitSurefireProvider extends AbstractProvider {
             return "64";
         }
         return "32";
-    }
-
-    public RunResult sampleInvoke(Object forkTestSet) throws TestSetFailedException, ReporterException, InvocationTargetException {
-        consoleLogger.info("invoke: TestSource:" + testSourceDirectory + "\n");
-
-        ReporterFactory reporterFactory = providerParameters.getReporterFactory();
-        RunListener runListener = reporterFactory.createReporter();
-        ReportEntry sampleSuite = new SimpleReportEntry("sampleSuite", "sampleSuite");
-        runListener.testSetStarting(sampleSuite);
-        runListener.testStarting(new SimpleReportEntry("test_sample.q", "test_sample"));
-        runListener.testSucceeded(new SimpleReportEntry("test_sample.q", "test_sample"));
-        runListener.testStarting(new SimpleReportEntry("test_sample1.q", "test_sample"));
-        runListener.testFailed(new SimpleReportEntry("test_sample1.q", "test_sample", new LegacyPojoStackTraceWriter("aa1", "bbb1", new FailedTest("bob does not match")), 0));
-        runListener.testStarting(new SimpleReportEntry("test_sample1.q", "test_sample"));
-        runListener.testFailed(new SimpleReportEntry("test_sample1.q", "test_sample", new LegacyPojoStackTraceWriter("aa2","bbb2",new FailedTest("not true")), 0));
-        runListener.testStarting(new SimpleReportEntry("test_sample1.q", "test_sample"));
-        runListener.testFailed(new SimpleReportEntry("test_sample1.q", "test_sample", new LegacyPojoStackTraceWriter("aa3","bbb3",new FailedTest("feck")), 0));
-        runListener.testSetCompleted(sampleSuite);
-        RunResult rr =  reporterFactory.close();
-        return rr;
     }
 }
