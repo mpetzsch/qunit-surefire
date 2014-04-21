@@ -42,5 +42,6 @@ notEqual:{ if[x~y;fail[z]] }
 greaterThan:{ if[not x>y;fail[z]] }
 lessThan:{ if[not x<y;fail[z]] }
 sameType:{ if[not type[x]=type[y];fail[z]] }
+error:{[f;a;e;m]  }
 
 \d .

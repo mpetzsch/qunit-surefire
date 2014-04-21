@@ -9,3 +9,8 @@
 	1+1; .assert.fail["Expected 2 but got 3"];
 	}
 
+.test.test_multiply:{
+	.assert.equal[2;useOther[1;2]];
+	:()
+    }
+

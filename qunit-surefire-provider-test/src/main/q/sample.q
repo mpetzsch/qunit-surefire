@@ -11,3 +11,4 @@ bad:{
 	'bad
 	}
 
+useOther:{[x;y] multiply[1;2] }
